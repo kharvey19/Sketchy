@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome</title>
+    <title>Welcome to Sketchy</title>
     <style>
         body {
             background-color: #121212;
@@ -17,21 +16,38 @@
         }
         .container {
             text-align: center;
+            max-width: 800px;
+            padding: 20px;
         }
         .start-button {
             background-color: #1e88e5;
             color: #ffffff;
-            padding: 10px 20px;
-            font-size: 18px;
+            padding: 12px 24px;
+            font-size: 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-top: 30px;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        h1 {
+            margin-bottom: 30px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Welcome to Sketchy: Generative AI Police Sketch Artist</h1>
+        <p>
+            Sketchy is an AI-powered tool designed to generate police sketches based on witness descriptions and user input. 
+            Through a guided survey, you will provide detailed information about a suspect's appearance. 
+            After completing the survey, you can upload an image to further refine the generated sketches using your own input. 
+            Your participation helps us create accurate AI-generated images that can assist in law enforcement efforts.
+        </p>
         <form action="{{ url_for('start') }}" method="post">
             <button type="submit" class="start-button">Start</button>
         </form>

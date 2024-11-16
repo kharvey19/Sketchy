@@ -1,9 +1,25 @@
 from app import app
 # app.py
-from flask import Flask, request, jsonify, render_template, redirect, g, url_for
+from flask import Flask, request, jsonify, render_template, redirect, g, url_for, send_from_directory
 import sqlite3
+import os
+import glob
+from werkzeug.utils import secure_filename
+from PIL import Image, ImageDraw
+import random
 
 DATABASE = 'responses.db'
+
+UPLOAD_FOLDER = 'uploaded_images'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+GENERATED_FOLDER = 'generated_images'  # Folder for generated images
+os.makedirs(GENERATED_FOLDER, exist_ok=True)
+GENERATED_FOLDER = os.path.join(os.getcwd(), 'generated_images')
+app.config['GENERATED_FOLDER'] = GENERATED_FOLDER
 
 # Database connection
 def get_db():
@@ -75,6 +91,8 @@ def init_db():
                 confidence_level TEXT,
 
                 summary TEXT, 
+                uploaded_image TEXT,
+                generated_images TEXT,
                        
                 FOREIGN KEY(user_id) REFERENCES user_info(user_id)
             )
@@ -97,8 +115,6 @@ def personal_info():
     if request.method == 'POST':
         data = request.get_json()
         name = data['name']
-        # age = data['age']
-        # date_of_birth = data['date_of_birth']
 
         db = get_db()
         cursor = db.cursor()
@@ -220,6 +236,158 @@ def generate_description(user_id):
 
     return description
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# Route to render the image upload page
+@app.route('/upload')
+def upload():
+    user_id = request.args.get('userId')  # Get userId from query parameters
+    if not user_id:
+        return "User ID is missing!", 400
+    return render_template('upload.html', user_id=user_id)
+
+@app.route('/generated_images/<filename>')
+def generated_file(filename):
+    print(f"Attempting to serve file: {filename}")  # Debugging log
+    print(f"Serving files from: {app.config['GENERATED_FOLDER']}")
+    return send_from_directory(app.config['GENERATED_FOLDER'], filename)
+
+
+# Route for uploading an image
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'message': 'No file part'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'message': 'No selected file'}), 400
+
+    if file and allowed_file(file.filename):
+        user_id = request.form.get('userId')
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''
+            UPDATE suspect_descriptions
+            SET uploaded_image = ?
+            WHERE user_id = ?
+        ''', (filename, user_id))
+        db.commit()
+
+        # Generate initial images on upload
+        summary_text = cursor.execute(
+            'SELECT summary FROM suspect_descriptions WHERE user_id = ?', (user_id,)
+        ).fetchone()['summary']
+        generated_images = run_clip_model(filepath, summary_text)
+        generated_image_paths = save_generated_images(generated_images, user_id)
+
+        return jsonify({
+            'success': True,
+            'message': 'Image uploaded and initial images generated successfully!',
+            'generated_images': generated_image_paths
+        }), 200
+
+    return jsonify({'success': False, 'message': 'Invalid file type'}), 400
+
+# Route to refine an image with a user-selected prompt and selected image
+@app.route('/refine-image', methods=['POST'])
+def refine_image():
+    data = request.get_json()
+    user_id = data.get("user_id")
+    selected_image = data.get("selected_image")
+    prompt_text = data.get("prompt")
+
+    if not user_id or not selected_image or not prompt_text:
+        return jsonify({"success": False, "message": "Missing data"}), 400
+
+    # Generate new images based on the selected image and prompt
+    refined_images = run_clip_model(selected_image, prompt_text)
+
+    # Save the refined images
+    refined_image_paths = save_generated_images(refined_images, user_id)
+
+    # Return only the new images to the frontend
+    return jsonify({"success": True, "images": refined_image_paths})
+
+
+# Function to generate mock images using PIL based on an image and text prompt
+def run_clip_model(image_path, text):
+    """
+    Simulate image generation by creating random dummy images with Pillow.
+    """
+    images = []
+    for i in range(4):  # Generate 4 images
+        img = Image.new('RGB', (256, 256), color=(255, 255, 255))  # White background
+        draw = ImageDraw.Draw(img)
+        draw.text((10, 10), f"Image {i+1}\n", fill=(0, 0, 0))  # Add mock text
+        images.append(img)
+    return images
+
+# Function to save generated images with incrementing filenames
+def save_generated_images(images, user_id):
+    saved_image_paths = []
+
+    # Find the next available number for the user
+    existing_files = glob.glob(f"{app.config['GENERATED_FOLDER']}/generated_image_{user_id}_*.png")
+    existing_numbers = [
+        int(os.path.splitext(os.path.basename(file))[0].split("_")[-1]) for file in existing_files
+    ]
+    next_number = max(existing_numbers, default=0) + 1
+
+    for i, img in enumerate(images, start=next_number):
+        filename = f"generated_image_{user_id}_{i}.png"
+        filepath = os.path.join(app.config['GENERATED_FOLDER'], filename)
+        img.save(filepath)  # Save the Pillow image
+        saved_image_paths.append(filename)
+
+    return saved_image_paths
+
+@app.route('/generate-images', methods=['GET'])
+def display_generated_images():
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({"success": False, "message": "User ID is missing!"}), 400
+
+    # Fetch generated images for the user from the GENERATED_FOLDER
+    generated_folder = app.config['GENERATED_FOLDER']
+    generated_images = sorted(glob.glob(f"{generated_folder}/generated_image_{user_id}_*.png"))
+
+    if not generated_images:
+        return jsonify({"success": False, "message": "No generated images found!"}), 404
+
+    # Log the images being returned
+    generated_images = [os.path.basename(image) for image in generated_images]
+    print(f"Returning generated images for user {user_id}: {generated_images}")  # Debug log
+
+    return render_template('generated_images.html', user_id=user_id)
+
+@app.route('/api/generate-images', methods=['GET'])
+def get_generated_images():
+    user_id = request.args.get('userId')
+    if not user_id:
+        return jsonify({"success": False, "message": "User ID is missing!"}), 400
+
+    generated_folder = app.config['GENERATED_FOLDER']
+    generated_images = sorted(glob.glob(f"{generated_folder}/generated_image_{user_id}_*.png"))
+    latest_images = generated_images[-4:]  # Get the last 4 images
+
+    if not latest_images:
+        return jsonify({"success": False, "message": "No generated images found!"}), 404
+
+    # Log the images being returned
+    print(f"Returning generated images for user {user_id}: {generated_images}")  # Debug log
+
+    latest_images = [os.path.basename(image) for image in latest_images]
+    return jsonify({"success": True, "images": latest_images})
 
 
 if __name__ == '__main__':

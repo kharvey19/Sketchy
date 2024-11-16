@@ -61,6 +61,8 @@ def init_db():
                 confidence_level TEXT,
                        
                 summary TEXT, 
+                uploaded_image TEXT,
+                generated_images TEXT,
 
                 FOREIGN KEY(user_id) REFERENCES user_info(user_id)
             )

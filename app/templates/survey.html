@@ -248,6 +248,31 @@
             });
         }
 
+        // function nextQuestion() {
+        //     const currentSectionId = sections[currentSection];
+        //     const questions = document.querySelectorAll(`#${currentSectionId} .question`);
+            
+        //     // Collect response from the current question
+        //     const responses = collectResponses(questions[currentQuestion]);
+        //     submitResponses(responses);
+
+        //     // Move to next question or next section if at the end of the current section's questions
+        //     if (currentQuestion < questions.length - 1) {
+        //         currentQuestion++;
+        //         loadQuestion();
+        //     } else {
+        //         if (currentSection < sections.length - 1) {
+        //             currentSection++;
+        //             currentQuestion = 0;
+        //             loadSection();
+        //         } else {
+        //             alert("Thank you! The survey is complete.");
+        //             document.getElementById("survey-form").style.display = "none";
+        //         }
+        //     }
+        // }
+
+
         function nextQuestion() {
             const currentSectionId = sections[currentSection];
             const questions = document.querySelectorAll(`#${currentSectionId} .question`);
@@ -266,8 +291,10 @@
                     currentQuestion = 0;
                     loadSection();
                 } else {
-                    alert("Thank you! The survey is complete.");
-                    document.getElementById("survey-form").style.display = "none";
+                    // If it's the last question of the last section
+                    alert("Survey completed. Redirecting to the image upload page...");
+                    const userId = new URLSearchParams(window.location.search).get("userId");
+                    window.location.href = "/upload?userId=" + userId;
                 }
             }
         }
