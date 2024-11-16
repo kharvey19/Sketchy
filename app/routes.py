@@ -6,7 +6,9 @@ import os
 import glob
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw
-import random
+from transformers import CLIPTextModel, CLIPTokenizer
+import numpy as np
+
 
 DATABASE = 'responses.db'
 
@@ -310,7 +312,28 @@ def refine_image():
         return jsonify({"success": False, "message": "Missing data"}), 400
 
     # Generate new images based on the selected image and prompt
-    refined_images = run_clip_model(selected_image, prompt_text)
+    db = get_db()
+    cursor = db.cursor()
+
+    # Fetch the 'summary' field from the database for the user
+    result = cursor.execute(
+        'SELECT summary FROM suspect_descriptions WHERE user_id = ?', (user_id,)
+    ).fetchone()
+
+    if not result or not result['summary']:
+        return jsonify({"success": False, "message": "No summary found for the user"}), 400
+
+    summary_text = result['summary']
+
+    # Generate embeddings for the 'summary' and feedback prompt
+    original_embedding = get_text_embedding(summary_text)
+    feedback_embedding = get_text_embedding(prompt_text)
+
+    # Combine embeddings
+    combined_embedding = combine_embeddings(original_embedding, feedback_embedding, weight=0.5)
+
+    # Generate new images based on the combined embedding
+    refined_images = run_clip_model(selected_image, combined_embedding)
 
     # Save the refined images
     refined_image_paths = save_generated_images(refined_images, user_id)
@@ -320,7 +343,7 @@ def refine_image():
 
 
 # Function to generate mock images using PIL based on an image and text prompt
-def run_clip_model(image_path, text):
+def run_clip_model(image_path, embedding):
     """
     Simulate image generation by creating random dummy images with Pillow.
     """
@@ -388,6 +411,25 @@ def get_generated_images():
 
     latest_images = [os.path.basename(image) for image in latest_images]
     return jsonify({"success": True, "images": latest_images})
+
+clip_model = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
+clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
+
+def get_text_embedding(text):
+    """
+    Compute embedding for a given text using the CLIP model.
+    """
+    inputs = clip_tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    outputs = clip_model(**inputs)
+    embedding = outputs.last_hidden_state  # This gives you the text embeddings
+    return embedding.mean(dim=1).detach().numpy()  # Taking mean for pooling
+
+
+def combine_embeddings(original_embedding, feedback_embedding, weight=0.5):
+    """
+    Combine the original embedding with feedback embedding using a weighted average.
+    """
+    return (1 - weight) * np.array(original_embedding) + weight * np.array(feedback_embedding)
 
 
 if __name__ == '__main__':
