@@ -18,14 +18,14 @@ This project is a Flask-based web application that uses generative AI to create 
 
 ## Installation and Setup
 
-# Step 1: Install Required Packages
+### Step 1: Install Required Packages
 Ensure you have Python installed on your system. Then, install the required packages by running the following command:
 
 ```
 pip install -r requirements.txt
 ```
 
-# Step 2 Set Up the Database
+### Step 2: Set Up the Database
 Create the SQLite tables by running:
 
 ```
