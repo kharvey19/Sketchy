@@ -18,7 +18,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-GENERATED_FOLDER = 'generated_images'  # Folder for generated images
+GENERATED_FOLDER = 'generated_images' 
 os.makedirs(GENERATED_FOLDER, exist_ok=True)
 GENERATED_FOLDER = os.path.join(os.getcwd(), 'generated_images')
 app.config['GENERATED_FOLDER'] = GENERATED_FOLDER
@@ -159,88 +159,6 @@ def submit_response():
     generate_description(user_id)
     return jsonify({'message': 'Responses saved successfully'}), 200
 
-
-def is_survey_complete(user_id):
-    """Check if all necessary responses for the survey have been completed by the user."""
-    cursor = get_db().cursor()
-    cursor.execute('''
-        SELECT gender, age, body_build, height, distinctive_features, face_shape, hair_color, hair_style, eyes, nose, 
-                   mouth, teeth, chine_jawline, facial_hair, skkine_tone, skin_blemishes, wrinkles, clothing, accesories, glasses_description
-                   standout_features, confidence_level
-        FROM suspect_descriptions WHERE user_id = ?
-    ''', (user_id,))
-    result = cursor.fetchone()
-    return all(result)  # True if all necessary fields are filled
-
-def generate_description(user_id):
-    """Generate a description paragraph based on survey responses for the given user and store it in the database."""
-    cursor = get_db().cursor()
-    
-    # Retrieve survey responses
-    cursor.execute('''
-        SELECT gender, age, body_build, height, distinctive_features, face_shape, hair_color, hair_style, forehead, 
-               eyebrows, eyes, nose, mouth, teeth, chin_jawline, facial_hair, skin_tone, skin_blemishes, wrinkles, 
-               clothing, accessories, glasses_description, standout_features, confidence_level
-        FROM suspect_descriptions WHERE user_id = ?
-    ''', (user_id,))
-    row = cursor.fetchone()
-
-    if not row:
-        return "No description available for this user."
-
-    # Generate the description
-    parts = [
-        f"The suspect is described as {row['gender']}" if row['gender'] else "",
-        f"around {row['age']} years old" if row['age'] else "",
-        f"with a {row['body_build']} build" if row['body_build'] else "",
-        f"approximately {row['height']} tall" if row['height'] else "",
-        f"with distinctive features like {row['distinctive_features']}" if row['distinctive_features'] else "",
-        f"The face shape is {row['face_shape']}" if row['face_shape'] else "",
-        f"hair color is {row['hair_color']}" if row['hair_color'] else "",
-        f"hair style is {row['hair_style']}" if row['hair_style'] else "",
-        f"with a {row['forehead']} forehead" if row['forehead'] else "",
-        f"and {row['eyebrows']} eyebrows" if row['eyebrows'] else "",
-        f"The eyes are {row['eyes']}" if row['eyes'] else "",
-        f"with a {row['nose']} nose" if row['nose'] else "",
-        f"a {row['mouth']} mouth" if row['mouth'] else "",
-        f"and {row['teeth']} teeth" if row['teeth'] else "",
-        f"The jawline is {row['chin_jawline']}" if row['chin_jawline'] else "",
-        f"with {row['facial_hair']} facial hair" if row['facial_hair'] else "",
-        f"The skin tone is {row['skin_tone']}" if row['skin_tone'] else "",
-        f"with {row['skin_blemishes']} skin features" if row['skin_blemishes'] else "",
-        f"{row['wrinkles']} wrinkles or age lines" if row['wrinkles'] else "",
-        f"wearing {row['clothing']}" if row['clothing'] else "",
-        f"accessories include {row['accessories']}" if row['accessories'] else "",
-        f"glasses described as {row['glasses_description']}" if row['glasses_description'] else "",
-        f"Notable standout features include {row['standout_features']}" if row['standout_features'] else "",
-        f"The confidence level in this description is {row['confidence_level']}" if row['confidence_level'] else ""
-    ]
-
-    description = ""
-    for part in filter(None, parts):
-        # Add ". " only if the sentence doesn't end with certain conjunctions
-        if part.startswith(("The")):
-            description += ". " + part
-        else:
-            description += " " + part
-
-    # Remove leading ". " and add final period
-    description = description.strip(". ") + "."
-
-    # Update the suspect_descriptions table with the generated summary
-    cursor.execute('''
-        UPDATE suspect_descriptions
-        SET summary = ?
-        WHERE user_id = ?
-    ''', (description, user_id))
-
-    get_db().commit()
-
-    return description
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -341,39 +259,6 @@ def refine_image():
     # Return only the new images to the frontend
     return jsonify({"success": True, "images": refined_image_paths})
 
-
-# Function to generate mock images using PIL based on an image and text prompt
-def run_clip_model(image_path, embedding):
-    """
-    Simulate image generation by creating random dummy images with Pillow.
-    """
-    images = []
-    for i in range(4):  # Generate 4 images
-        img = Image.new('RGB', (256, 256), color=(255, 255, 255))  # White background
-        draw = ImageDraw.Draw(img)
-        draw.text((10, 10), f"Image {i+1}\n", fill=(0, 0, 0))  # Add mock text
-        images.append(img)
-    return images
-
-# Function to save generated images with incrementing filenames
-def save_generated_images(images, user_id):
-    saved_image_paths = []
-
-    # Find the next available number for the user
-    existing_files = glob.glob(f"{app.config['GENERATED_FOLDER']}/generated_image_{user_id}_*.png")
-    existing_numbers = [
-        int(os.path.splitext(os.path.basename(file))[0].split("_")[-1]) for file in existing_files
-    ]
-    next_number = max(existing_numbers, default=0) + 1
-
-    for i, img in enumerate(images, start=next_number):
-        filename = f"generated_image_{user_id}_{i}.png"
-        filepath = os.path.join(app.config['GENERATED_FOLDER'], filename)
-        img.save(filepath)  # Save the Pillow image
-        saved_image_paths.append(filename)
-
-    return saved_image_paths
-
 @app.route('/generate-images', methods=['GET'])
 def display_generated_images():
     user_id = request.args.get('userId')
@@ -412,6 +297,119 @@ def get_generated_images():
     latest_images = [os.path.basename(image) for image in latest_images]
     return jsonify({"success": True, "images": latest_images})
 
+def is_survey_complete(user_id):
+    """Check if all necessary responses for the survey have been completed by the user."""
+    cursor = get_db().cursor()
+    cursor.execute('''
+        SELECT gender, age, body_build, height, distinctive_features, face_shape, hair_color, hair_style, eyes, nose, 
+                   mouth, teeth, chine_jawline, facial_hair, skkine_tone, skin_blemishes, wrinkles, clothing, accesories, glasses_description
+                   standout_features, confidence_level
+        FROM suspect_descriptions WHERE user_id = ?
+    ''', (user_id,))
+    result = cursor.fetchone()
+    return all(result)  # True if all necessary fields are filled
+
+def generate_description(user_id):
+    """Generate a description paragraph based on survey responses for the given user and store it in the database."""
+    cursor = get_db().cursor()
+    
+    # Retrieve survey responses
+    cursor.execute('''
+        SELECT gender, age, body_build, height, distinctive_features, face_shape, hair_color, hair_style, forehead, 
+               eyebrows, eyes, nose, mouth, teeth, chin_jawline, facial_hair, skin_tone, skin_blemishes, wrinkles, 
+               clothing, accessories, glasses_description, standout_features, confidence_level
+        FROM suspect_descriptions WHERE user_id = ?
+    ''', (user_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        return "No description available for this user."
+
+    # Generate the description
+    parts = [
+        f"The suspect is described as {row['gender']}" if row['gender'] else "",
+        f"around {row['age']} years old" if row['age'] else "",
+        f"with a {row['body_build']} build" if row['body_build'] else "",
+        f"approximately {row['height']} tall" if row['height'] else "",
+        f"with distinctive features like {row['distinctive_features']}" if row['distinctive_features'] else "",
+        f"The face shape is {row['face_shape']}" if row['face_shape'] else "",
+        f"hair color is {row['hair_color']}" if row['hair_color'] else "",
+        f"hair style is {row['hair_style']}" if row['hair_style'] else "",
+        f"with a {row['forehead']} forehead" if row['forehead'] else "",
+        f"and {row['eyebrows']} eyebrows" if row['eyebrows'] else "",
+        f"The eyes are {row['eyes']}" if row['eyes'] else "",
+        f"with a {row['nose']} nose" if row['nose'] else "",
+        f"a {row['mouth']} mouth" if row['mouth'] else "",
+        f"and {row['teeth']} teeth" if row['teeth'] else "",
+        f"The jawline is {row['chin_jawline']}" if row['chin_jawline'] else "",
+        f"with {row['facial_hair']} facial hair" if row['facial_hair'] else "",
+        f"The skin tone is {row['skin_tone']}" if row['skin_tone'] else "",
+        f"with {row['skin_blemishes']} skin features" if row['skin_blemishes'] else "",
+        f"{row['wrinkles']} wrinkles or age lines" if row['wrinkles'] else "",
+        f"wearing {row['clothing']}" if row['clothing'] else "",
+        f"accessories include {row['accessories']}" if row['accessories'] else "",
+        f"glasses described as {row['glasses_description']}" if row['glasses_description'] else "",
+        f"Notable standout features include {row['standout_features']}" if row['standout_features'] else "",
+        f"The confidence level in this description is {row['confidence_level']}" if row['confidence_level'] else ""
+    ]
+
+    description = ""
+    for part in filter(None, parts):
+        # Add ". " only if the sentence doesn't end with certain conjunctions
+        if part.startswith(("The")):
+            description += ". " + part
+        else:
+            description += " " + part
+
+    # Remove leading ". " and add final period
+    description = description.strip(". ") + "."
+
+    # Update the suspect_descriptions table with the generated summary
+    cursor.execute('''
+        UPDATE suspect_descriptions
+        SET summary = ?
+        WHERE user_id = ?
+    ''', (description, user_id))
+
+    get_db().commit()
+
+    return description
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Function to generate mock images using PIL based on an image and text prompt
+def run_clip_model(image_path, embedding):
+    """
+    Simulate image generation by creating random dummy images with Pillow.
+    """
+    images = []
+    for i in range(4):  # Generate 4 images
+        img = Image.new('RGB', (256, 256), color=(255, 255, 255))  # White background
+        draw = ImageDraw.Draw(img)
+        draw.text((10, 10), f"Image {i+1}\n", fill=(0, 0, 0))  # Add mock text
+        images.append(img)
+    return images
+
+# Function to save generated images with incrementing filenames
+def save_generated_images(images, user_id):
+    saved_image_paths = []
+
+    # Find the next available number for the user
+    existing_files = glob.glob(f"{app.config['GENERATED_FOLDER']}/generated_image_{user_id}_*.png")
+    existing_numbers = [
+        int(os.path.splitext(os.path.basename(file))[0].split("_")[-1]) for file in existing_files
+    ]
+    next_number = max(existing_numbers, default=0) + 1
+
+    for i, img in enumerate(images, start=next_number):
+        filename = f"generated_image_{user_id}_{i}.png"
+        filepath = os.path.join(app.config['GENERATED_FOLDER'], filename)
+        img.save(filepath) 
+        saved_image_paths.append(filename)
+
+    return saved_image_paths
+
 clip_model = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
 clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 
@@ -421,8 +419,8 @@ def get_text_embedding(text):
     """
     inputs = clip_tokenizer(text, return_tensors="pt", padding=True, truncation=True)
     outputs = clip_model(**inputs)
-    embedding = outputs.last_hidden_state  # This gives you the text embeddings
-    return embedding.mean(dim=1).detach().numpy()  # Taking mean for pooling
+    embedding = outputs.last_hidden_state
+    return embedding
 
 
 def combine_embeddings(original_embedding, feedback_embedding, weight=0.5):
