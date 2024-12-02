@@ -8,7 +8,9 @@ from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw
 from transformers import CLIPTextModel, CLIPTokenizer
 import numpy as np
-
+import re
+import time 
+import torch
 
 DATABASE = 'responses.db'
 
@@ -219,45 +221,200 @@ def upload_image():
     return jsonify({'success': False, 'message': 'Invalid file type'}), 400
 
 # Route to refine an image with a user-selected prompt and selected image
+# @app.route('/refine-image', methods=['POST'])
+# def refine_image():
+#     data = request.get_json()
+#     user_id = data.get("user_id")
+#     selected_image = data.get("selected_image")
+#     prompt_text = data.get("prompt")
+
+#     if not user_id or not selected_image or not prompt_text:
+#         return jsonify({"success": False, "message": "Missing data"}), 400
+
+#     # Generate new images based on the selected image and prompt
+#     db = get_db()
+#     cursor = db.cursor()
+
+#     # Fetch the 'summary' field from the database for the user
+#     result = cursor.execute(
+#         'SELECT summary FROM suspect_descriptions WHERE user_id = ?', (user_id,)
+#     ).fetchone()
+
+#     if not result or not result['summary']:
+#         return jsonify({"success": False, "message": "No summary found for the user"}), 400
+
+#     summary_text = result['summary']
+
+#     # Generate embeddings for the 'summary' and feedback prompt
+#     original_embedding = get_text_embedding(summary_text)
+#     feedback_embedding = get_text_embedding(prompt_text)
+
+#     # Combine embeddings
+#     combined_embedding = combine_embeddings(original_embedding, feedback_embedding, weight=0.5)
+
+#     # Generate new images based on the combined embedding
+#     refined_images = run_clip_model(selected_image, combined_embedding)
+
+#     # Save the refined images
+#     refined_image_paths = save_generated_images(refined_images, user_id)
+
+#     # Return only the new images to the frontend
+#     return jsonify({"success": True, "images": refined_image_paths})
+
+# @app.route('/refine-image', methods=['POST'])
+# def refine_image():
+#     data = request.json
+#     user_id = data['user_id']
+#     selected_image = data['selected_image']
+#     features = data.get('features', {})  # Default to an empty dictionary
+
+#     if not features:
+#         return jsonify({"success": False, "message": "No features selected for refinement."})
+
+#     # Process the features to refine the image
+#     # updated_image = generate_refined_image(selected_image, features)
+
+#     updated_image = 0
+#     # Return the updated image path
+#     return jsonify({"success": True, "image_path": updated_image})
+
+def refine_summary(original_summary, features, feature_to_summary_mapping):
+    """
+    Refine the original summary by replacing or appending features dynamically.
+    Fix punctuation and capitalization issues, and ensure new features are added.
+    """
+    # Define a template for the summary
+    template = {
+        "gender": "The suspect is described as {value}",
+        "age": "{value}",
+        "body_build": "with a {value} build",
+        "height": "{value}",
+        "face_shape": "They have a {value} face shape",
+        "hair_color": "with {value} hair",
+        "hair_style": "with {value} hair",
+        "eyes": "Their eyes are {value}",
+        "nose": "and their nose is {value}",
+        "mouth": "and they have a {value} mouth",
+        "chin_jawline": "and a {value} jawline"
+    }
+
+    # Start with the original summary
+    refined_summary = original_summary
+
+    # Track features to append at the end
+    appended_features = []
+
+    # Iterate over features and update the summary
+    for feature, value in features.items():
+        if value and feature in feature_to_summary_mapping:
+            marker = feature_to_summary_mapping[feature]
+            placeholder = template.get(feature)
+
+            # Check if the feature is already mentioned in the summary
+            if marker in refined_summary:
+                # Replace existing description
+                refined_summary = re.sub(
+                    rf"{marker} [^.,]*", f"{marker} {value}", refined_summary
+                )
+            elif placeholder:
+                # Collect new features to append at the end
+                appended_features.append(placeholder.format(value=value))
+
+    # Append new features to the summary
+    if appended_features:
+        refined_summary += " " + " ".join(appended_features)
+
+    # Fix periods and capitalization
+    refined_summary = re.sub(r"\.\s+", ". ", refined_summary)  # Remove extraneous spaces after periods
+    refined_summary = re.sub(r"\. with", " with", refined_summary)  # Fix misplaced periods
+    refined_summary = re.sub(r"\. approximately", " approximately", refined_summary)  # Fix misplaced periods
+    refined_summary = re.sub(r"\s+\.", ".", refined_summary)  # Remove trailing spaces before periods
+    refined_summary = re.sub(r"\.\.+", ".", refined_summary)  # Remove double periods
+
+    # Ensure first letter is capitalized
+    refined_summary = refined_summary[0].upper() + refined_summary[1:]
+
+    # Ensure summary ends with a period
+    if not refined_summary.endswith("."):
+        refined_summary += "."
+
+    return refined_summary.strip()
+
+
+
 @app.route('/refine-image', methods=['POST'])
 def refine_image():
     data = request.get_json()
     user_id = data.get("user_id")
+    features = data.get("features", {})  # Default to an empty dictionary
     selected_image = data.get("selected_image")
-    prompt_text = data.get("prompt")
 
-    if not user_id or not selected_image or not prompt_text:
-        return jsonify({"success": False, "message": "Missing data"}), 400
+    if not user_id or not features or not selected_image:
+        return jsonify({"success": False, "message": "Missing user ID, features, or selected image."}), 400
 
-    # Generate new images based on the selected image and prompt
     db = get_db()
     cursor = db.cursor()
 
-    # Fetch the 'summary' field from the database for the user
+    # Fetch the existing summary
     result = cursor.execute(
         'SELECT summary FROM suspect_descriptions WHERE user_id = ?', (user_id,)
     ).fetchone()
 
     if not result or not result['summary']:
-        return jsonify({"success": False, "message": "No summary found for the user"}), 400
+        return jsonify({"success": False, "message": "No existing summary found."}), 400
 
-    summary_text = result['summary']
+    original_summary = result['summary']
 
-    # Generate embeddings for the 'summary' and feedback prompt
-    original_embedding = get_text_embedding(summary_text)
-    feedback_embedding = get_text_embedding(prompt_text)
+    # Define mappings between features and their corresponding text in the summary
+    feature_to_summary_mapping = {
+        "chin_jawline": "The jawline is",
+        "eyes": "Their eyes are",
+        "nose": "Their nose is",
+        "mouth": "Their mouth is",
+        "hair_color": "Their hair color is",
+        "hair_style": "Their hair style is",
+        "face_shape": "Their face shape is",
+        "gender": "The suspect is described as",
+        "age": "The suspect is",
+        "body_build": "with a",
+        "height": ""
+    }
 
-    # Combine embeddings
-    combined_embedding = combine_embeddings(original_embedding, feedback_embedding, weight=0.5)
+    # Call refine_summary to generate the refined summary
+    updated_summary = refine_summary(original_summary, features, feature_to_summary_mapping)
 
-    # Generate new images based on the combined embedding
+    # Generate embeddings
+    original_embedding = get_text_embedding(original_summary)
+    updated_embedding = get_text_embedding(updated_summary)
+
+    # Combine embeddings with a weight for the original embedding
+    combined_embedding = combine_embeddings(original_embedding, updated_embedding, weight=0.7)
+
+    # Pass combined embedding to Stable Diffusion to generate refined images
     refined_images = run_clip_model(selected_image, combined_embedding)
-
-    # Save the refined images
     refined_image_paths = save_generated_images(refined_images, user_id)
 
-    # Return only the new images to the frontend
-    return jsonify({"success": True, "images": refined_image_paths})
+    # Print the original and refined prompts
+    print("\n--- Refinement Process Completed ---")
+    print(f"Original Prompt:\n{original_summary}")
+    print(f"Refined Prompt:\n{updated_summary}")
+    print("-----------------------------------\n")
+
+    # Update the summary in the database
+    cursor.execute(
+        'UPDATE suspect_descriptions SET summary = ? WHERE user_id = ?',
+        (updated_summary, user_id)
+    )
+    db.commit()
+
+    # Return success and updated images
+    return jsonify({
+        "success": True,
+        "message": "Summary and images updated successfully.",
+        "updated_summary": updated_summary,
+        "refined_images": refined_image_paths
+    })
+
 
 @app.route('/generate-images', methods=['GET'])
 def display_generated_images():
@@ -269,6 +426,9 @@ def display_generated_images():
     generated_folder = app.config['GENERATED_FOLDER']
     generated_images = sorted(glob.glob(f"{generated_folder}/generated_image_{user_id}_*.png"))
 
+
+    time.sleep(0.5) 
+
     if not generated_images:
         return jsonify({"success": False, "message": "No generated images found!"}), 404
 
@@ -277,6 +437,7 @@ def display_generated_images():
     print(f"Returning generated images for user {user_id}: {generated_images}")  # Debug log
 
     return render_template('generated_images.html', user_id=user_id)
+
 
 @app.route('/api/generate-images', methods=['GET'])
 def get_generated_images():
@@ -416,18 +577,23 @@ clip_tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 def get_text_embedding(text):
     """
     Compute embedding for a given text using the CLIP model.
+    Ensure no gradients are required for the returned tensor.
     """
     inputs = clip_tokenizer(text, return_tensors="pt", padding=True, truncation=True)
-    outputs = clip_model(**inputs)
-    embedding = outputs.last_hidden_state
-    return embedding
+    with torch.no_grad():  # Prevent gradient computation
+        outputs = clip_model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1)  # Average across the sequence
 
 
 def combine_embeddings(original_embedding, feedback_embedding, weight=0.5):
     """
     Combine the original embedding with feedback embedding using a weighted average.
+    Detach tensors to avoid runtime errors when converting to NumPy.
     """
-    return (1 - weight) * np.array(original_embedding) + weight * np.array(feedback_embedding)
+    original_array = original_embedding.detach().numpy()
+    feedback_array = feedback_embedding.detach().numpy()
+    return (1 - weight) * original_array + weight * feedback_array
+
 
 
 if __name__ == '__main__':
