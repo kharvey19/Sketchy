@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Sketch Survey</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            height: 10px;
+            background-color: #1e88e5;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .question-group, .question {
+            display: none;
+        }
+        .question-group.active, .question.active {
+            display: block;
+        }
+        .question {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .input-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .next-button {
+            background-color: #1e88e5;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .none-checkbox {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <!-- Survey Form -->
+        <form id="survey-form">
+            <!-- General Appearance Section -->
+            <div class="question-group" id="general-appearance">
+                <h2 style="margin-bottom: 40px;">General Appearance</h2>
+                <div class="question">
+                    <p>What gender is the suspect?</p>
+                    <input type="text" id="gender" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'gender')"> None
+                </div>
+                <div class="question">
+                    <p>Approximately what age did the suspect look?</p>
+                    <input type="range" id="age" min="0" max="100" class="input-box" oninput="this.nextElementSibling.value = this.value">
+                    <output>50</output>
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'age')"> None
+                </div>
+                <div class="question">
+                    <p>What was the suspect's body build?</p>
+                    <input type="text" id="body_build" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'body_build')"> None
+                </div>
+                <div class="question">
+                    <p>Approximately how tall did the suspect look?</p>
+                    <input type="text" id="height" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'height')"> None
+                </div>
+                <div class="question">
+                    <p>Describe any of the suspect's distinctive features</p>
+                    <input type="text" id="distinctive_features" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'distinctive_features')"> None
+                </div>
+            </div>
+
+            <!-- Facial Features Section -->
+            <div class="question-group" id="facial-features">
+                <h2 style="margin-bottom: 40px;">Facial Features</h2>
+                <div class="question">
+                    <p>Describe the suspect's face shape</p>
+                    <input type="text" id="face_shape" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'face_shape')"> None
+                </div>
+                <div class="question">
+                    <p>What was the suspects hair color?</p>
+                    <input type="text" id="hair_color" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'hair_color')"> None
+                </div>
+                <div class="question">
+                    <p>What was the suspects hair style?</p>
+                    <input type="text" id="hair_style" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'hair_style')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's forehead</p>
+                    <input type="text" id="forehead" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'forehead')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's eyebrows</p>
+                    <input type="text" id="eyebrows" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'eyebrows')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's eyes</p>
+                    <input type="text" id="eyes" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'eyes')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's nose</p>
+                    <input type="text" id="nose" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'nose')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's mouth</p>
+                    <input type="text" id="mouth" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'mouth')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's teeth</p>
+                    <input type="text" id="teeth" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'teeth')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's chin and jawline</p>
+                    <input type="text" id="chin_jawline" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'chin_jawline')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the suspect's facial hair</p>
+                    <input type="text" id="facial_hair" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'facial_hair')"> None
+                </div>
+            </div>
+
+            <!-- Skin and Complexion Section -->
+            <div class="question-group" id="skin-complexion">
+                <h2 style="margin-bottom: 40px;">Skin and Complexion</h2>
+                <div class="question">
+                    <p>Describe the suspect's skin tone</p>
+                    <input type="text" id="skin_tone" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'skin_tone')"> None
+                </div>
+                <div class="question">
+                    <p>Describe any of the suspect's blemishes, scars, freckles, moles, or acne</p>
+                    <input type="text" id="skin_blemishes" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'skin_blemishes')"> None
+                </div>
+                <div class="question">
+                    <p>Describe the susect's wrinkles or age lines</p>
+                    <input type="text" id="wrinkles" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'wrinkles')"> None
+                </div>
+            </div>
+
+            <!-- Clothing and Accessories Section -->
+            <div class="question-group" id="clothing-accessories">
+                <h2 style="margin-bottom: 40px;">Clothing and Accessories</h2>
+                <div class="question">
+                    <p>Clothing Description</p>
+                    <input type="text" id="clothing" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'clothing')"> None
+                </div>
+                <div class="question">
+                    <p>Accessories (Glasses, Hats, Jewelry, etc.)</p>
+                    <input type="text" id="accessories" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'accessories')"> None
+                </div>
+                <div class="question">
+                    <p>Glasses Description</p>
+                    <input type="text" id="glasses_description" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'glasses_description')"> None
+                </div>
+            </div>
+
+            <!-- Additional Details Section -->
+            <div class="question-group" id="additional-details">
+                <h2 style="margin-bottom: 40px;">Additional Details</h2>
+                <div class="question">
+                    <p>What Stood Out the Most?</p>
+                    <input type="text" id="standout_features" class="input-box" placeholder="Type here">
+                    <input type="checkbox" class="none-checkbox" onclick="toggleNone(this, 'standout_features')"> None
+                </div>
+                <div class="question">
+                    <p>Confidence Level</p>
+                    <input type="range" id="age" min="0" max="10" class="input-box" oninput="this.nextElementSibling.value = this.value">
+                    <output>5</output>
+                </div>
+            </div>
+
+            <!-- Navigation Button -->
+            <button type="button" class="next-button" onclick="nextQuestion()">Next</button>
+        </form>
+    </div>
+
+    <script>
+        const sections = ["general-appearance", "facial-features", "skin-complexion", "clothing-accessories", "additional-details"];
+        let currentSection = 0;
+        let currentQuestion = 0;
+
+        function loadSection() {
+            document.querySelectorAll(".question-group").forEach((group, index) => {
+                group.style.display = index === currentSection ? "block" : "none";
+            });
+            loadQuestion();
+            updateProgressBar();
+        }
+
+        function loadQuestion() {
+            const questions = document.querySelectorAll(`#${sections[currentSection]} .question`);
+            questions.forEach((q, index) => {
+                q.style.display = index === currentQuestion ? "block" : "none";
+            });
+        }
+
+        // function nextQuestion() {
+        //     const currentSectionId = sections[currentSection];
+        //     const questions = document.querySelectorAll(`#${currentSectionId} .question`);
+            
+        //     // Collect response from the current question
+        //     const responses = collectResponses(questions[currentQuestion]);
+        //     submitResponses(responses);
+
+        //     // Move to next question or next section if at the end of the current section's questions
+        //     if (currentQuestion < questions.length - 1) {
+        //         currentQuestion++;
+        //         loadQuestion();
+        //     } else {
+        //         if (currentSection < sections.length - 1) {
+        //             currentSection++;
+        //             currentQuestion = 0;
+        //             loadSection();
+        //         } else {
+        //             alert("Thank you! The survey is complete.");
+        //             document.getElementById("survey-form").style.display = "none";
+        //         }
+        //     }
+        // }
+
+
+        function nextQuestion() {
+            const currentSectionId = sections[currentSection];
+            const questions = document.querySelectorAll(`#${currentSectionId} .question`);
+            
+            // Collect response from the current question
+            const responses = collectResponses(questions[currentQuestion]);
+            submitResponses(responses);
+
+            // Move to next question or next section if at the end of the current section's questions
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                if (currentSection < sections.length - 1) {
+                    currentSection++;
+                    currentQuestion = 0;
+                    loadSection();
+                } else {
+                    // If it's the last question of the last section
+                    alert("Survey completed. Redirecting to the image upload page...");
+                    const userId = new URLSearchParams(window.location.search).get("userId");
+                    window.location.href = "/upload?userId=" + userId;
+                }
+            }
+        }
+
+        function collectResponses(questionElement) {
+            const responses = {};
+            const input = questionElement.querySelector("input");
+            const noneCheckbox = questionElement.querySelector(".none-checkbox");
+            if (input && (!noneCheckbox || !noneCheckbox.checked)) { // Ignore if "None" is checked
+                responses[input.id] = input.value;
+            }
+            return responses;
+        }
+
+        function submitResponses(responses) {
+            const userId = new URLSearchParams(window.location.search).get('userId');
+            fetch('/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, responses })
+            }).then(response => response.json())
+              .then(data => console.log(data.message))
+              .catch(error => console.error('Error:', error));
+        }
+
+        function updateProgressBar() {
+            const totalQuestions = Array.from(document.querySelectorAll('.question-group')).reduce((sum, section) => sum + section.querySelectorAll('.question').length, 0);
+            const currentProgress = Array.from(document.querySelectorAll('.question-group')).slice(0, currentSection).reduce((sum, section) => sum + section.querySelectorAll('.question').length, 0) + currentQuestion + 1;
+            const progress = (currentProgress / totalQuestions) * 100;
+            document.getElementById("progress-bar").style.width = progress + "%";
+        }
+
+        function toggleNone(checkbox, inputId) {
+            const input = document.getElementById(inputId);
+            input.disabled = checkbox.checked;
+            if (checkbox.checked) input.value = ""; // Clear value if "None" is selected
+        }
+
+        window.onload = loadSection;
+    </script>
+</body>
+</html>

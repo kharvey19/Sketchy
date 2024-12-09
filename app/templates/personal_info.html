@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Information</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+        }
+        .input-box {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .next-button {
+            background-color: #1e88e5;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Personal Information</h1>
+        <form id="personal-info-form">
+            <input type="text" id="name" class="input-box" placeholder="Name" required>
+            <!-- <input type="number" id="age" class="input-box" placeholder="Age" required>
+            <input type="date" id="date_of_birth" class="input-box" placeholder="Date of Birth" required> -->
+            <button type="button" class="next-button" onclick="submitPersonalInfo()">Start Survey</button>
+        </form>
+    </div>
+
+    <script>
+        let userId;
+
+        function submitPersonalInfo() {
+            const name = document.getElementById('name').value;
+            // const age = document.getElementById('age').value;
+            // const dateOfBirth = document.getElementById('date_of_birth').value;
+
+            fetch('/personal-info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                userId = data.user_id;  // Store user_id
+                window.location.href = `/survey?userId=${userId}`;  // Navigate to survey page
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

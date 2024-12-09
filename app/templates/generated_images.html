@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Images</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+        }
+        .images-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+        .image-box {
+            max-width: 200px;
+            border: 3px solid transparent;
+            cursor: pointer;
+        }
+        .image-box.selected {
+            border-color: #1e88e5;
+        }
+        .image-box img {
+            width: 100%;
+            border-radius: 8px;
+        }
+        .feature-container {
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 800px;
+        }
+        .feature-select {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .refine-button, .stop-button {
+            background-color: #1e88e5;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .stop-button {
+            background-color: #d32f2f;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px; /* Space between buttons */
+            justify-content: center; /* Center buttons horizontally */
+            align-items: center; /* Align buttons vertically */
+            margin-top: 20px; /* Add some spacing above the buttons */
+        }
+    </style>
+</head>
+<body>
+    <h2>Generated Images</h2>
+    <div class="images-container" id="images-container">
+        <!-- Images will be displayed here -->
+    </div>
+    <div class="feature-container">
+        <div class="feature-select">
+            <label for="gender">Gender:</label>
+            <select id="gender">
+                <option value="">None</option>
+                <option value="more feminine">More Feminine</option>
+                <option value="more masculine">More Masculine</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="age">Age:</label>
+            <select id="age">
+                <option value="">None</option>
+                <option value="younger">Younger</option>
+                <option value="older">Older</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="body_build">Body Build:</label>
+            <select id="body_build">
+                <option value="">None</option>
+                <option value="slimmer">Slimmer</option>
+                <option value="bulkier">Bulkier</option>
+                <option value="more muscular">More Muscular</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="height">Height:</label>
+            <select id="height">
+                <option value="">None</option>
+                <option value="shorter">Shorter</option>
+                <option value="taller">Taller</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="face_shape">Face Shape:</label>
+            <select id="face_shape">
+                <option value="">None</option>
+                <option value="rounder">Rounder</option>
+                <option value="more square-shaped">More Square-Shaped</option>
+                <option value="more oval-shaped">More Oval-Shaped</option>
+                <option value="more heart-shaped">More Heart-Shaped</option>
+                <option value="more diamond-shaped">More Diamond-Shaped</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="hair_color">Hair Color:</label>
+            <select id="hair_color">
+                <option value="">None</option>
+                <option value="lighter">Lighter</option>
+                <option value="darker">Darker</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="hair_style">Hair Style:</label>
+            <select id="hair_style">
+                <option value="">None</option>
+                <option value="curlier">Curlier</option>
+                <option value="straighter">Straighter</option>
+                <option value="wavier">Wavier</option>
+                <option value="shorter">Shorter</option>
+                <option value="longer">Longer</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="eyes">Eyes:</label>
+            <select id="eyes">
+                <option value="">None</option>
+                <option value="larger">Larger</option>
+                <option value="smaller">Smaller</option>
+                <option value="more almond-shaped">More Almond-Shaped</option>
+                <option value="wider">Wider</option>
+                <option value="closer">Closer</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="nose">Nose:</label>
+            <select id="nose">
+                <option value="">None</option>
+                <option value="narrower">Narrower</option>
+                <option value="wider">Wider</option>
+                <option value="pointier">Pointier</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="mouth">Mouth:</label>
+            <select id="mouth">
+                <option value="">None</option>
+                <option value="fuller">Fuller</option>
+                <option value="thinner">Thinner</option>
+                <option value="wider">Wider</option>
+            </select>
+        </div>
+        <div class="feature-select">
+            <label for="chin_jawline">Chin/Jawline:</label>
+            <select id="chin_jawline">
+                <option value="">None</option>
+                <option value="sharper">Sharper</option>
+                <option value="softer">Softer</option>
+                <option value="more square">More Square</option>
+            </select>
+        </div>
+        <!-- Add more dropdowns as needed -->
+    </div>
+    <div class="button-container">
+        <button class="refine-button" onclick="refineImage()">Refine Image</button>
+        <button class="stop-button" onclick="stopProcess()">Stop</button>
+    </div>
+    
+
+    <script>
+        let selectedImage = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const userId = "{{ user_id }}"; // User ID passed from Flask
+            fetch(`/api/generate-images?userId=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadImages(data.images);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error("Error fetching images:", error));
+        });
+
+        function loadImages(images) {
+            const container = document.getElementById("images-container");
+            container.innerHTML = '';
+            images.forEach((image, index) => {
+                const imgBox = document.createElement("div");
+                imgBox.className = "image-box";
+                const imgElement = document.createElement("img");
+                imgElement.src = `/generated_images/${image}`;
+                imgElement.alt = `Generated Image ${index + 1}`;
+                imgBox.appendChild(imgElement);
+
+                imgBox.addEventListener("click", () => {
+                    document.querySelectorAll(".image-box").forEach(box => box.classList.remove("selected"));
+                    imgBox.classList.add("selected");
+                    selectedImage = image;
+                });
+
+                container.appendChild(imgBox);
+            });
+        }
+
+        function refineImage() {
+            const userId = new URLSearchParams(window.location.search).get("userId");
+
+            if (!selectedImage) {
+                alert("Please select an image to refine.");
+                return;
+            }
+
+            // Collect dropdown selections
+            const featureSelections = {
+                gender: document.getElementById("gender").value || null,
+                age: document.getElementById("age").value || null,
+                body_build: document.getElementById("body_build").value || null,
+                height: document.getElementById("height").value || null,
+                face_shape: document.getElementById("face_shape").value || null,
+                hair_color: document.getElementById("hair_color").value || null,
+                hair_style: document.getElementById("hair_style").value || null,
+                eyes: document.getElementById("eyes").value || null,
+                nose: document.getElementById("nose").value || null,
+                mouth: document.getElementById("mouth").value || null,
+                chin_jawline: document.getElementById("chin_jawline").value || null,
+            };
+
+            fetch("/refine-image", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: userId,
+                    selected_image: selectedImage,
+                    features: featureSelections
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => console.error("Error refining image:", error));
+        }
+
+        function stopProcess() {
+            alert("Process stopped.");
+            window.location.href = "/";
+        }
+    </script>
+</body>
+</html>

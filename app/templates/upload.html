@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Suspect Image</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 20px;
+        }
+        .input-file {
+            margin: 20px 0;
+            color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .upload-button {
+            background-color: #1e88e5;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload an Image of the Suspect</h2>
+        <form id="image-upload-form" enctype="multipart/form-data">
+            <input type="file" id="suspect-image" name="image" class="input-file" accept="image/*" required>
+            <button type="submit" class="upload-button">Upload</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById("image-upload-form").addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            const userId = new URLSearchParams(window.location.search).get("userId");
+            const fileInput = document.getElementById("suspect-image");
+
+            if (fileInput.files.length > 0) {
+                formData.append("image", fileInput.files[0]);
+                formData.append("userId", userId);
+
+                fetch("/upload-image", {
+                    method: "POST",
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to the generated images page with the userId
+                        window.location.href = `/generate-images?userId=${userId}`;
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+            } else {
+                alert("Please select an image to upload.");
+            }
+        });
+
+    </script>
+</body>
+</html>
