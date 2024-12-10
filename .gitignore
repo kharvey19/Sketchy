@@ -11,3 +11,7 @@ __pycache__/
 # CLIP checkpoints
 *.pt
 clip_checkpoint_epoch_20.pt
+
+*.jpg
+
+.DS_Store
