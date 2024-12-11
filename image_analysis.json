@@ -1,0 +1,25 @@
+[
+    {
+        "Gender": "male",
+        "ApproximateAge": "45-50",
+        "BodyBuild": "None",
+        "Height": "None",
+        "DistinctiveFeatures": "None",
+        "FaceShape": "oval with a broad forehead",
+        "HairStyleAndTexture": "short, straight hair combed to the side",
+        "Forehead": "broad and smooth",
+        "Eyebrows": "thin and straight with a subtle curve",
+        "Eyes": "small, round eyes with a calm expression",
+        "Nose": "medium and straight with a slight bulb at the tip",
+        "Mouth": "thin lips with a neutral expression",
+        "Teeth": "None",
+        "Jawline": "soft and rounded",
+        "FacialHair": "none",
+        "SkinTone": "light with smooth complexion",
+        "ClothingStyleAndTexture": "a collared shirt with a tie",
+        "Accessories": "thin round glasses",
+        "NotableStandoutFeatures": "None",
+        "ConfidenceLevel": "4.5",
+        "ImageFileName": "00001.jpg"
+    }
+]
