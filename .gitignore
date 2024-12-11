@@ -15,3 +15,6 @@ clip_checkpoint_epoch_20.pt
 *.jpg
 
 .DS_Store
+*.txt
+
+.DS_Store
