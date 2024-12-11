@@ -24,3 +24,16 @@ chatgpt_descriptions/original_sketch/
 chatgpt_descriptions/test
 
 venv/
+# Virtual Environment
+.venv/
+.venv/*
+venv/
+venv/*
+
+# Python
+*.pyc
+__pycache__/
+
+# CLIP checkpoints
+*.pt
+.DS_Store
