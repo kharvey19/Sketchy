@@ -1,3 +1,22 @@
+# Ignore virtual environment
+venv/
+*.pyc
+__pycache__/
+
+# macOS-specific files
+.DS_Store
+
+# Example directories
+original_sketch/
+test/
+
+# Ignore other temporary files
+*.log
+*.swp
+*.tmp
+
+
+venv/lib/python3.11/site-packages/_distutils_hack/__pycache__/__init__.cpython-311.pyc
 venv/
 chatgpt_descriptions/original_sketch/
 
