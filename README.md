@@ -1,41 +1,135 @@
-# Welcome to Sketchy!
+# Police Sketch Generation Project
 
-## Overview
-This project is a Flask-based web application that uses generative AI to create and refine police sketch images. By combining structured suspect descriptions with generative models like CLIP, users can iteratively refine sketches through feedback, enabling more accurate visual representations of suspects.
+⚠️ **IMPORTANT NOTE**: This project has already been run through completion, and all outputs are included in the repository. Rerunning the entire pipeline will take an extremely long time (multiple hours) and significant computational resources. The results of all studies, fine-tuning, and tests are already available in their respective directories.
 
-## Features
-- **Survey Input**: Collect detailed descriptions of a suspect's appearance via structured forms, including information about gender, age, body build, facial features, and distinguishing characteristics.
+This project implements a machine learning pipeline for generating police sketches from textual descriptions using fine-tuned Stable Diffusion and CLIP models.
 
-- **AI-Generated Sketches**: Combines OpenAI's CLIP model and Stable Diffusion to generate initial police sketch images from descriptive text summaries. CLIP encodes the text descriptions into embeddings, which guide the Stable Diffusion model to produce realistic sketches.
+## Step-by-Step Guide
 
-- **Interactive Refinement**: Enables iterative refinement of generated sketches. Users provide additional feedback prompts (e.g., "Make the nose smaller" or "Add glasses"), which are encoded using CLIP and combined with the original text embeddings to guide Stable Diffusion in refining the images.
+### Step 1: Environment Setup
+```bash
+# Create virtual environment
+python -m venv .venv
 
-- **Database Integration**: Uses SQLite to store user information, structured survey responses, generated images, and refinement history. This ensures all data is associated with a specific user session for seamless interaction and retrieval.
+# Activate virtual environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-
-## Workflow Diagram
-![Workflow Diagram](diagram.png)  
-
-## Installation and Setup
-
-### Step 1: Install Required Packages
-Ensure you have Python installed on your system. Then, install the required packages by running the following command:
-
-```
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Step 2: Set Up the Database
-Create the SQLite tables by running:
+### Step 2: Data Preparation
+1. Download the CUHK Face Sketch FERET Dataset:
+```bash
+python download_data.py
+```
+This will download the dataset to the `data/` directory.
+
+2. Generate text descriptions using OpenAI's API:
+```bash
+cd chatgpt_descriptions
+python gen_descriptions.py
+```
+This script uses OpenAI's GPT model to generate detailed descriptions for each sketch. The descriptions are saved in `data/descriptions/`.
+
+Note: These steps have already been completed, and the data is included in the repository.
+
+### Step 3: Ablation Study
+```bash
+cd ..
+python sd_fine_tune.py
+```
+This script performs an ablation study on different LoRA configurations:
+- Self-attention only (`ablation_study_self_only/`)
+- Cross-attention only (`ablation_study_cross_only/`)
+- Both attention types (`ablation_study_both/`)
+
+**Key Finding**: The study concluded that applying LoRA to both self- and cross-attention layers produces the most sketch-like and consistent results. This configuration was used for the final model.
+
+Note: This study has been completed, and results are available in the respective directories.
+
+### Step 4: CLIP Fine-tuning
+```bash
+python clip_fine_tune.py
+```
+Fine-tunes the CLIP model for better text-image alignment specific to police sketches. The final checkpoint is available at `clip_checkpoint_epoch_20.pt`.
+
+### Step 5: Model Validation
+1. Test base Stable Diffusion:
+```bash
+python basic_sd_test.py
+```
+Generates sample images using the base model for comparison.
+
+2. Test integrated pipeline:
+```bash
+python clip_sd_pipeline.py
+```
+Tests the combination of fine-tuned CLIP and Stable Diffusion models.
+
+### Step 6: Testing
+Run the test suite in the `tests/` directory:
+
+1. Model Integration Tests:
+```bash
+python -m pytest tests/test_model_integration.py
+```
+Verifies proper integration of CLIP and Stable Diffusion models.
+
+2. Image Generation Tests:
+```bash
+python -m pytest tests/test_image_generation.py
+```
+Validates image generation quality and consistency.
+
+3. Text Processing Tests:
+```bash
+python -m pytest tests/test_text_processing.py
+```
+Ensures proper handling of textual descriptions.
+
+Test results and sample outputs are stored in `tests/output/`.
+
+## Unused Development Files
+
+The following files were created during initial development but were not used in the final implementation:
+
+### Web Application (Unused)
+- `app/` directory: Contains a Flask web application that was initially planned for deployment
+- `run.py`: Web application entry point
+- `tables.py`: Database schema definitions
+
+### Additional Test Files (Unused)
+- `test_self_attention.py`: Standalone test for self-attention mechanism
+
+## Project Structure
 
 ```
-python tables.py
+.
+├── app/                        # Unused web application
+├── data/                      # Dataset and descriptions
+│   ├── sketches/             # CUHK Face Sketch FERET Dataset
+│   └── descriptions/         # Generated text descriptions
+├── tests/                    # Test files
+├── ablation_study_*/         # Ablation study results
+├── generated_sketches/       # Model outputs
+└── requirements.txt         # Project dependencies
 ```
 
-## Running the program
-Start the program with:
+## Results and Outputs
 
-```
-python run.py
-```
+- Ablation study results: `ablation_study_*/`
+- Generated samples: `generated_sketches/`
+- Training metrics: `training_plots/`
+- CLIP checkpoint: `clip_checkpoint_epoch_20.pt`
+
+## Requirements
+
+See `requirements.txt` for complete list of dependencies. Key requirements:
+- PyTorch
+- Diffusers
+- Transformers
+- OpenAI API (for description generation)
+- NumPy
+- Matplotlib
 
