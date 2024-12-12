@@ -70,25 +70,14 @@ Tests the combination of fine-tuned CLIP and Stable Diffusion models.
 ### Step 6: Testing
 Run the test suite in the `tests/` directory:
 
-1. Model Integration Tests:
-```bash
-python -m pytest tests/test_model_integration.py
-```
-Verifies proper integration of CLIP and Stable Diffusion models.
+Each test is provided as a standalone Jupyter Notebook. To run a test, simply execute the cells in the corresponding notebook:
 
-2. Image Generation Tests:
-```bash
-python -m pytest tests/test_image_generation.py
-```
-Validates image generation quality and consistency.
-
-3. Text Processing Tests:
-```bash
-python -m pytest tests/test_text_processing.py
-```
-Ensures proper handling of textual descriptions.
-
-Test results and sample outputs are stored in `tests/output/`.
+1. `img2clip_finetuned.ipynb`: Executes the fine-tuned CLIP-to-img2img Stable Diffusion pipeline on a single image.
+2. `img2imgclip.ipynb`: Executes the CLIP-to-img2img Stable Diffusion pipeline on a single image.
+3. `img2imgtest.ipynb`: Executes the baseline img2img Stable Diffusion pipeline on a single image.
+4. `iteration_img2clip.ipynb`: Runs the CLIP-to-img2img Stable Diffusion pipeline with iterative steps and plots metrics (SSIM, PSNR, CLIP Score, LPIPS) across iterations.
+5. `iteration_stable.ipynb`: Runs the baseline img2img Stable Diffusion pipeline with iterative steps and plots metrics across iterations.
+6. `iteration_finetuned_img2clip.ipynb`: Runs the fine-tuned CLIP-to-img2img Stable Diffusion pipeline with iterative steps and plots metrics across iterations.
 
 ## Unused Development Files
 
