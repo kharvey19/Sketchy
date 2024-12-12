@@ -78,7 +78,7 @@ Each test is provided as a standalone Jupyter Notebook. To run a test, simply ex
 4. `iteration_img2clip.ipynb`: Runs the CLIP-to-img2img Stable Diffusion pipeline with iterative steps and plots metrics (SSIM, PSNR, CLIP Score, LPIPS) across iterations.
 5. `iteration_stable.ipynb`: Runs the baseline img2img Stable Diffusion pipeline with iterative steps and plots metrics across iterations.
 6. `iteration_finetuned_img2clip.ipynb`: Runs the fine-tuned CLIP-to-img2img Stable Diffusion pipeline with iterative steps and plots metrics across iterations.
-
+7. `final_metrics`: Runs all iterative tests and computes performance comparisons across models
 ## Unused Development Files
 
 The following files were created during initial development but were not used in the final implementation:
